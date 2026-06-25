@@ -6,7 +6,7 @@ report.json, and memory/episode_<run_id>.json entirely; logs/*.log (plain
 text, tailed live by the dashboard) are unaffected.
 
 Connection string: STORMSIM_DATABASE_URL env var, defaulting to a dedicated
-local container (see README_operations.md "Database setup") -- deliberately
+local container (see scripts/README.md "Database setup") -- deliberately
 NOT the default Postgres port 5432, which on this machine already belongs
 to an unrelated existing stack.
 

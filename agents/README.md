@@ -155,7 +155,7 @@ history via one MCP `get_telemetry` call, computes `sim/metrics.py`'s
 math) over that storm's *self-detected* `(onset_t, subside_t)` window
 (no hardcoded scenario boundaries — see Tactical above), runs the
 reasoner, and inserts one row into PostgreSQL's `storms` table (see
-`README_database.md`) — one `INSERT` per storm, no read-modify-write file.
+`../instrumentation/README.md`) — one `INSERT` per storm, no read-modify-write file.
 
 ## Evolution: feeding memory back into the next storm
 
@@ -188,7 +188,7 @@ stays the existing deterministic baseline controller, untuned.
 PostgreSQL's `storms` table now holds one row per storm with `resilience`,
 `classification`, `lessons`, `decision_source`, and
 `policy_before`/`policy_after` (JSONB columns) — query it directly (see
-`README_database.md` for example queries) to see exactly what changed and
+`../instrumentation/README.md` for example queries) to see exactly what changed and
 why between storms. `scripts/dashboard.py`'s Live Run tab charts P and the
 two policy knobs per storm_index when a report has more than one; its
 Compare Runs tab adds `P_first`/`P_last`/`improved` columns for multi-storm
@@ -261,7 +261,7 @@ keeps payload content, only byte counts.
 Each call writes one row straight to PostgreSQL's `llm_calls` table as it
 completes (via the same per-process `InstrumentedRecorder`, now backed by
 `instrumentation/db.py` instead of an in-memory list dumped to a JSON file
-on exit -- see `README_database.md`), so `db.build_overhead_report()` picks
+on exit -- see `../instrumentation/README.md`), so `db.build_overhead_report()` picks
 them up automatically (`report["llm_calls"]`, flattened across owners and
 tagged; `report["llm_summary"]` / `per_owner[...]["llm"]` for count/
 fallback-count/total tokens/mean latency) with no changes needed to
@@ -282,7 +282,7 @@ Every process keeps its own `InstrumentedRecorder` (MCP calls for
 row to PostgreSQL's `calls` table per call as it completes.
 `instrumentation/db.py`'s `build_overhead_report()` queries and aggregates
 them after the episode (no per-process dump-and-merge step -- see
-`README_database.md`). Both the MCP **and**
+`../instrumentation/README.md`). Both the MCP **and**
 A2A side of the same logical call are recorded independently (client-side in
 the agent process, server-side in the callee's process) — by design, so the
 report's `by_channel` totals double-count each call from both ends; this is

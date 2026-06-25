@@ -2,7 +2,7 @@
 
 A practical runbook -- one place to look up "how do I actually run X" without
 digging through the architecture docs. For *why* things are built the way
-they are, see `README.md` (overview) and the per-module docs it links to.
+they are, see `../README.md` (overview) and the per-module docs it links to.
 
 All commands below assume you're in the project root with the venv active:
 
@@ -52,7 +52,7 @@ automatically on first connection (`instrumentation/db.py: ensure_schema()`)
 -- no manual migration step.
 
 Check it's up: `docker compose ps` should show `postgres` as `healthy`.
-See `README_database.md` for the schema and example queries.
+See `../instrumentation/README.md` for the schema and example queries.
 
 ---
 
@@ -95,7 +95,7 @@ everything down, and prints the combined resilience + overhead report
 | Flag | Default | What it does |
 |---|---|---|
 | `--backend` | `subprocess` | or `docker` -- runs mcp_server + the 3 agents as Docker Compose services instead of bare processes; see "3b. Docker backend" below |
-| `--scenario` | `single_storm` | or `multi_storm` (3 storms, exercises the evolution loop -- see `README_agents.md`) |
+| `--scenario` | `single_storm` | or `multi_storm` (3 storms, exercises the evolution loop -- see `../agents/README.md`) |
 | `--rt-factor` | `1.0` | wall-clock seconds per simulated second. `1.0` = true real time (~17 min for single_storm, ~18 min for multi_storm). Lower compresses time but starves a real LLM's decision latency -- use `0.05`-`0.1` only with `--llm-provider stub` for a fast (~1 min) smoke test. **Don't combine a low `--rt-factor` with a real LLM provider**: if process startup/warmup eats into the pre-storm window in real time, Tactical's first telemetry poll can land *after* the storm has already started, which corrupts its self-detected baseline arrival rate and silently skips onset/subside detection (escalation still fires off the queue threshold, but no storm gets recorded) -- this is a pre-existing timing sensitivity in the onset-detection design, not a database/Docker issue |
 | `--llm-provider` | `ollama` | or `stub` (deterministic rules, no model call -- fast, reproducible), `anthropic`, `openai` (need `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` in your environment) |
 | `--llm-base-url` | `http://localhost:11434` | Ollama daemon URL (only matters for `--llm-provider ollama`; auto-rewritten to `http://host.docker.internal:11434` under `--backend docker` unless you override it) |
@@ -206,7 +206,7 @@ lsof -ti:8501 | xargs kill -9                  # the dashboard itself, if needed
 ## 5. Where results end up
 
 **PostgreSQL** (`docker compose up -d postgres`, port 5433) is the source of
-truth for everything structured -- see `README_database.md` for the full
+truth for everything structured -- see `../instrumentation/README.md` for the full
 schema and example queries. In brief, keyed by `run_id`:
 - `runs` -- current phase (`starting`/`ready`/`running`/`done`/`stopped`/
   `failed`) and the full config it ran with; what the dashboard polls live.
@@ -236,4 +236,4 @@ gone, replaced by the `storms` table.
 | All decisions show `"_source": "fallback"` with `--llm-provider ollama` | Ollama isn't reachable at `--llm-base-url` (under `--backend docker`, this should auto-resolve to `host.docker.internal:11434`), the model isn't pulled, or the call timed out -- check `curl http://localhost:11434/api/tags` and the agent's `.log` file for the `[llm] ... error=...` line. The system is designed to fall back to deterministic rules rather than crash, so this fails silently into a working (if less interesting) run unless you check the logs. |
 | A run completes but the database shows zero rows in `storms` even though escalation/decision activity is visible in the logs | Tactical's onset-detection baseline got captured *after* the storm already started (see the `--rt-factor` warning above) -- usually means rt_factor was set too low for a real (non-stub) LLM provider's startup/warmup overhead. Re-run with `--rt-factor 1.0` or `--llm-provider stub`. |
 | Streamlit shows a stale dashboard after I edited `dashboard.py` | Streamlit's default file watcher is polling-based and can lag; restart it (`Ctrl+C` then re-run) to be sure you're on the latest code. |
-| `compare_baselines.py` output doesn't match the numbers in `README.md` | Something changed in `sim/`. This should never happen from agent/dashboard work -- if it does, it's a real regression, not expected drift. |
+| `compare_baselines.py` output doesn't match the numbers in `../README.md` | Something changed in `sim/`. This should never happen from agent/dashboard work -- if it does, it's a real regression, not expected drift. |

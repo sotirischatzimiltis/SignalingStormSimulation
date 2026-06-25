@@ -5,7 +5,7 @@ Context Protocol** (package `mcp`, the official Python SDK, FastMCP): telemetry
 as readable resources, actuators and the existing solver/forecaster as tools.
 Every call is instrumented (count, payload bytes, latency) via
 `instrumentation/recorder.py`, separately from the A2A inter-agent traffic
-(see `README_agents.md`) — that separation is what lets the paper attribute
+(see `../agents/README.md`) — that separation is what lets the paper attribute
 overhead to "talking to the simulator" vs. "agents talking to each other."
 
 ---
@@ -63,7 +63,7 @@ real-time-overhead requirement).
     is to be something an agent could legitimately call mid-storm.
     `forecast_arrival_rate` has no MCP dependency, so a future
     `ForecastLyapunov`-via-forecaster variant (needed for the fairness
-    ablation — see `README_controllers.md`) can import it directly.
+    ablation — see `../sim/README_controllers.md`) can import it directly.
   - `tool_get_telemetry` — bulk read (used by the strategic agent's
     episode-end recovery validation).
 - **`server.py`** — `build_mcp_app(host, recorder, ...)`: wires each
@@ -75,15 +75,15 @@ real-time-overhead requirement).
 - **`__main__.py`** — `python -m mcp_server --rt-factor 0.2 --port 8800
   --run-id <id>`. Builds the `SimConfig` (matching
   `scripts/compare_baselines.py`'s `lq_max=1500`), constructs `SimHost`
-  (without starting it), serves the FastMCP app until terminated. On exit,
-  dumps its `InstrumentedRecorder` to
-  `instrumentation/_runs/<run-id>/mcp_server.json`.
+  (without starting it), serves the FastMCP app until terminated. Its
+  `InstrumentedRecorder` writes straight to PostgreSQL as calls happen (see
+  `../instrumentation/README.md`) -- nothing dumped to disk on exit.
 
 ## MCP has no push/subscribe primitive
 
 Resources are pull-only. The tactical agent detects triggers by **polling**
 `telemetry://latest` on its own schedule (deliberately much slower than the
-sim's `sample_dt_s` control tick — see `README_agents.md`), not by being
+sim's `sample_dt_s` control tick — see `../agents/README.md`), not by being
 notified.
 
 ## Typical use (manual, e.g. via the MCP Inspector or a throwaway client)

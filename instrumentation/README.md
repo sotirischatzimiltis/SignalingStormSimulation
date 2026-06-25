@@ -6,7 +6,7 @@ in PostgreSQL. There is no more per-process JSON dump, `status.json`,
 `report.json`, or `memory/episode_<run_id>.json`; only `logs/<agent>.log`
 (plain stdout, tailed live by the dashboard) stays a file.
 
-All of the logic lives in `instrumentation/db.py`. See `README_agents.md`
+All of the logic lives in `instrumentation/db.py`. See `../agents/README.md`
 ("Where the overhead numbers come from", "Seeing what each LLM call
 actually did", "Evolution") for how each table gets written during an
 episode; this file is the schema/query reference.
@@ -20,7 +20,7 @@ psql "$STORMSIM_DATABASE_URL"
 
 Deliberately **not** port 5432 -- that's reserved for whatever else might
 already be running on a dev machine (this project's default assumes a
-dedicated container; see `README_operations.md` "Database setup").
+dedicated container; see `../scripts/README.md` "Database setup").
 
 ## Schema
 

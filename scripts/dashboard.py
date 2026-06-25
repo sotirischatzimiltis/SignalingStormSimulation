@@ -328,7 +328,7 @@ def render_report(run_id: str) -> None:
         st.caption("A2A channel")
         a2a = by_channel.get("a2a", {})
         st.write(f"count={a2a.get('count', 0)}  mean_latency={a2a.get('mean_latency_s', 0)*1000:.1f}ms "
-                 f"(dominated by the long-blocking start_episode call -- see README_agents.md)  "
+                 f"(dominated by the long-blocking start_episode call -- see agents/README.md)  "
                  f"bytes={a2a.get('total_bytes', 0)}")
 
     llm_calls = overhead.get("llm_calls") or []

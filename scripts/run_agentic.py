@@ -20,7 +20,7 @@ Run from the project root:
     python -m scripts.run_agentic --rt-factor 0.05     # fast smoke test
     python -m scripts.run_agentic --backend docker     # containerized agents
 
-Process topology (see ReadMe/README_agents.md, ReadMe/README_mcp_server.md):
+Process topology (see agents/README.md, mcp_server/README.md):
   mcp_server (8800) -- owns the live StormSim; coordinator (9001); tactical
   (9002); strategic (9003). This script is the 5th, short-lived orchestrator
   -- it always runs on the host (never containerized itself), since it's
@@ -112,7 +112,7 @@ def docker_up(env: dict) -> None:
     same default project, instead of spinning up (and port-conflicting
     with) a second one scoped to a throwaway per-run project. This mirrors
     the existing single-run-at-a-time constraint the subprocess backend
-    already has (fixed ports 8800/9001/9002/9003 -- see README_operations.md)."""
+    already has (fixed ports 8800/9001/9002/9003 -- see scripts/README.md)."""
     subprocess.run(
         ["docker", "compose", "up", "-d", "--build", *DOCKER_SERVICES],
         cwd=str(PROJECT_ROOT), env=env, check=True,
