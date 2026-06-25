@@ -1,0 +1,10 @@
+simpy>=4.0
+numpy
+matplotlib
+mcp[cli]>=1.28,<2.0
+a2a-sdk[http-server]>=1.1,<2.0
+httpx
+uvicorn
+streamlit
+pandas
+asyncpg

@@ -1,0 +1,71 @@
+x-agent-defaults: &agent-defaults
+  build: .
+  environment:
+    STORMSIM_DATABASE_URL: postgresql://stormsim:stormsim@postgres:5432/stormsim
+  extra_hosts:
+    - "host.docker.internal:host-gateway"   # no-op on Docker Desktop, needed on Linux
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: stormsim
+      POSTGRES_PASSWORD: stormsim
+      POSTGRES_DB: stormsim
+    ports:
+      - "5433:5432"
+    volumes:
+      - stormsim-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stormsim"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  mcp_server:
+    <<: *agent-defaults
+    ports:
+      - "8800:8800"
+    command: >
+      python -m mcp_server --host 0.0.0.0 --port 8800 --run-id ${RUN_ID}
+      --rt-factor ${RT_FACTOR} --scenario ${SCENARIO} --c-max ${C_MAX} --seed ${SEED}
+
+  coordinator:
+    <<: *agent-defaults
+    ports:
+      - "9001:9001"
+    command: >
+      python -m agents.coordinator --host 0.0.0.0 --advertise-host coordinator --port 9001
+      --tactical-url http://tactical:9002 --strategic-url http://strategic:9003
+      --llm-provider ${LLM_PROVIDER} --llm-model ${COORDINATOR_MODEL} --llm-base-url ${LLM_BASE_URL}
+      --stub-latency-min ${STUB_LATENCY_MIN} --stub-latency-max ${STUB_LATENCY_MAX}
+      --seed ${SEED} --run-id ${RUN_ID}
+
+  tactical:
+    <<: *agent-defaults
+    ports:
+      - "9002:9002"
+    command: >
+      python -m agents.tactical --host 0.0.0.0 --advertise-host tactical --port 9002
+      --mcp-url http://mcp_server:8800/mcp --coordinator-url http://coordinator:9001
+      --poll-interval-s ${POLL_INTERVAL_S}
+      --llm-provider ${LLM_PROVIDER} --llm-model ${TACTICAL_MODEL} --llm-base-url ${LLM_BASE_URL}
+      --stub-latency-min ${STUB_LATENCY_MIN} --stub-latency-max ${STUB_LATENCY_MAX}
+      --seed ${SEED} --run-id ${RUN_ID}
+
+  strategic:
+    <<: *agent-defaults
+    ports:
+      - "9003:9003"
+    command: >
+      python -m agents.strategic --host 0.0.0.0 --advertise-host strategic --port 9003
+      --mcp-url http://mcp_server:8800/mcp
+      --llm-provider ${LLM_PROVIDER} --llm-model ${STRATEGIC_MODEL} --llm-base-url ${LLM_BASE_URL}
+      --stub-latency-min ${STUB_LATENCY_MIN} --stub-latency-max ${STUB_LATENCY_MAX}
+      --seed ${SEED} --run-id ${RUN_ID}
+
+volumes:
+  stormsim-pgdata:
