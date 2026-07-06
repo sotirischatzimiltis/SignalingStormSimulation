@@ -10,9 +10,10 @@ reproduces the published service rates:
   - M (CU-handled control messages in RRC setup) = 3
   - total internal processing  sum(t_p,i)         = 30 ms   (default)
   - one-way RU->BBU delay (monolithic, Split 7)   = 0.25 ms
-  - one-way RU->CU  delay (Open RAN, 7 + 2)        = 1.75 ms (0.25 + 1.5)
+  - one-way RU->CU  delay (Open RAN, 7.2x + F1)    = 1.60 ms (0.10 O-FH + 1.5 F1)
+    updated from 1.75 ms: O-RAN specs give typical RU->DU (O-FH) one-way = 0.10 ms
 => service time monolithic = 30 + 3*0.25 = 30.75 ms -> mu = 32.52 UEs/s
-=> service time Open RAN   = 30 + 3*1.75 = 35.25 ms -> mu = 28.37 UEs/s
+=> service time Open RAN   = 30 + 3*1.60 = 34.80 ms -> mu = 28.74 UEs/s
 """
 
 from dataclasses import dataclass, field
@@ -27,7 +28,7 @@ class ArchConfig:
     """Per-message control-plane delay accounting for the UE attach procedure."""
     n_ctrl_messages: int = 3          # M : CU-handled RRC msgs (Setup Req/Setup/Setup Complete)
     proc_total_ms: float = 30.0       # sum_i t_p,i : total internal processing (Table VII row "30")
-    oneway_delay_ms: float = 1.75     # RU->CU (Open RAN). Use 0.25 for monolithic.
+    oneway_delay_ms: float = 1.60     # RU->CU (Open RAN): 0.10 O-FH + 1.50 F1. Use 0.25 for monolithic.
 
     def service_time_ms(self) -> float:
         """Mean service time of one full attach attempt (ms)."""
@@ -39,7 +40,7 @@ class ArchConfig:
 
 
 def open_ran_arch(**kw) -> ArchConfig:
-    return ArchConfig(oneway_delay_ms=1.75, **kw)
+    return ArchConfig(oneway_delay_ms=1.60, **kw)
 
 
 def monolithic_arch(**kw) -> ArchConfig:
@@ -68,18 +69,31 @@ class RRCConfig:
 # ---------------------------------------------------------------------------
 @dataclass
 class StormPhase:
-    """A piecewise-constant segment of the arrival-rate timeline (seconds)."""
-    t_start: float
-    t_end: float
+    """Represents a time interval during which traffic arrival rates remain constant.
+    
+    """
+    t_start: float # Start time of the phase (seconds, inclusive)
+    t_end: float # End time of the phase (seconds, exclusive)
     benign_rate: float                # benign UE arrivals/s
     botnet_rate: float = 0.0          # malicious UE arrivals/s (repeated attach)
-    label: str = ""
+    label: str = "" # Optional label for the phase (for logging / plotting)
 
 
 @dataclass
 class TrafficConfig:
+    """
+    Defines the complete traffic profile for a simulation.
+
+    The traffic profile consists of a sequence of `StormPhase` objects that
+    describe how benign and malicious arrival rates evolve over time. The
+    configuration provides helper methods for determining the simulation
+    duration and retrieving the active traffic rates at a given time.
+    """
+    # Ordered list of traffic phases, each with its own benign and botnet arrival rates.
     phases: List[StormPhase] = field(default_factory=list)
 
+    # Return the total duration of the configured traffic scenario.
+    # The horizon is defined as the largest phase end time.
     def horizon(self) -> float:
         return max((p.t_end for p in self.phases), default=0.0)
 
